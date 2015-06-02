@@ -478,6 +478,8 @@ if(stop == false){ //only draws these if there are more quizzes (stops after 10)
 	 
 	float scale = 1.0 + 0.6 * sin(ofGetElapsedTimef()); //makes the shapes pulse
 	angle = 0.0; //used for building and rotating the shapes
+	
+	//this uses the vector polygon formula from the VectorGraphics addon example
 
 	if(sh1 ==true || q1 == true || q5 == true || q7 == true){ //only show the shape for its memorization or during these quizzes
 	
