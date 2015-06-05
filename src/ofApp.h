@@ -39,8 +39,9 @@ class ofApp : public ofBaseApp{
 //-----Stuff for game play/misc------
 		int score; //points scored
 		float fbonus; //score bonus for focusing
-		bool end, stop; //used to end game or stop quizzes
+		bool start, end, stop; //used to start/end game or stop quizzes
 		ofTrueTypeFont	font, ffont; //font for bitmap strings (ffont is for final score)
 		ofColor c1, c2; //colors for bg gradient
+		ofSoundPlayer buzzer; //for when player looks away
 		
 };

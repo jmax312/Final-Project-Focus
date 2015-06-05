@@ -3,6 +3,11 @@
 using namespace ofxCv;
 using namespace cv;
 
+/* The buzzer sound was recorded by Mike Koenig and can be found at http://soundbible.com/1206-Door-Buzzer.html
+It has been used for educational purposes.
+The formula for the bezier vector shapes was taken from the example for the Vector Graphics Addon.
+*/
+
 //--------------------------------------------------------------
 void ofApp::setup(){
 
@@ -10,12 +15,16 @@ void ofApp::setup(){
 	c2.set(24, 86, 199);
 
 	score = 0; //number of right answers chosen
+	start = true;
 	end = false; //ends the game after a set time
 	stop = false; //stops the shapes being drawn if the quizzes end before the timer
 
 	ofTrueTypeFont::setGlobalDpi(72); //keeps font from being too big
 	font.loadFont("verdana.ttf", 18, true, true); //font for timers, score, etc
 	ffont.loadFont("verdana.ttf", 26, true, true); //for final score only
+
+	buzzer.loadSound("sound/buzzer.wav"); //sound for when player looks away
+	buzzer.setVolume(0.75f); //volume of buzzer
 
 //----Camera stuff----
 	ofSetVerticalSync(true); //this is so our picture refreshes with the monitor so parts don't lag behind
@@ -61,7 +70,7 @@ void ofApp::setup(){
 
 	numSteps10 = ofRandom(25, 30);
 	
-	sh1 = true; //bools for showing shapes for memorization
+	sh1 = false; //bools for showing shapes for memorization
 	sh2 = false;
 	sh3 = false;
 	sh4 = false;
@@ -90,6 +99,8 @@ void ofApp::update(){
 
 		gameplay = ofGetElapsedTimef();
 		if (gameplay >= 60) end = true; //limits game to 1 min
+
+		ofSoundUpdate(); //updates sound player
 
 //----Camera Stuff------
 		cam.update();
@@ -438,8 +449,29 @@ void ofApp::update(){
 void ofApp::draw(){
 
 	ofBackgroundGradient(c1, c2, OF_GRADIENT_CIRCULAR); //background gradient
+//-------Start up (Instructions)---------
+if(start == true){
+	ofSetColor(255, 255, 255);
+	ofPushMatrix();
+		ofTranslate(250, 250);
+		ffont.drawString("Build up your focus and memory. \n Memorize the shapes that are shown \n and pick them out in the quizzes. \n Don't look away from the screen!", 0, 0); //instructions
+	ofPopMatrix();
 
-if (end == false){ //the stuff here is only shown when the game is in play (before 1 min is up)
+	ofSetColor(245, 242, 93);
+	ofPushMatrix();
+		ofTranslate(400, 400);
+		ofRect(0, 0, 100, 40); //start button
+	ofPopMatrix();
+
+	ofSetColor(0);
+	ofPushMatrix();
+		ofTranslate(430, 425);
+		font.drawString ("Start", 0, 0); //start button text
+	ofPopMatrix();
+	}
+
+
+if (end == false && start == false){ //the stuff here is only shown when the game is in play (before 1 min is up)
 //----Camera Stuff----
 	ofSetColor(255, 255, 255); //keeps the camera image (and some of the text) from being tinted
 	ofPushMatrix();
@@ -453,6 +485,7 @@ if (end == false){ //the stuff here is only shown when the game is in play (befo
 				focus+= 0.005; 
 			
 			if (finder.getLabel(i) > lastface){
+				buzzer.play(); //buzzes when you look away
 				focus = 0;
 				lastface = finder.getLabel(i);
 			}
@@ -471,7 +504,7 @@ if (end == false){ //the stuff here is only shown when the game is in play (befo
 		ofPopMatrix();
 
 //---Shapes Stuff----
-if(stop == false){ //only draws these if there are more quizzes (stops after 10)
+if(stop == false && start == false){ //only draws these if there are more quizzes (stops after 10)
 	output.fill(); //fills the shapes
 
 	output.setColor(0xF5F25D); //shape color (yellow)
@@ -761,6 +794,7 @@ if(stop == false){ //only draws these if there are more quizzes (stops after 10)
 }
 
 //---Gameplay Stuff that stays when game ends----
+if (start == false){
 	ofSetColor(255, 255, 255); //font color (so it's not the color of the shapes)
 	ofPushMatrix();
 		ofTranslate(100, 250);
@@ -771,6 +805,7 @@ if(stop == false){ //only draws these if there are more quizzes (stops after 10)
 		ofTranslate(100, 150);
 		font.drawString("Focus Timer: " + ofToString(focus), 0, 0); //focus timer
 	ofPopMatrix();
+}
 
 if(end == true) { //only show final score at end of game
 	ofPushMatrix();
@@ -778,11 +813,43 @@ if(end == true) { //only show final score at end of game
 		ffont.drawString("Final Score: " + ofToString(fbonus), 0, 0); //final score
 	ofPopMatrix();
 	}
+	if (fbonus >= 0 && fbonus <= 10){
+		ofPushMatrix();
+			ofTranslate(450, 450);
+			ffont.drawString("You need to focus more. Try again.", 0, 0); //low score text
+		ofPopMatrix();
+	}
+	if (fbonus > 10 && fbonus <= 20){
+		ofPushMatrix();
+			ofTranslate(450, 450);
+			ffont.drawString("Almost there! Try again.", 0, 0); //medium score text
+		ofPopMatrix();
+	}
+	if (fbonus > 20 && fbonus <= 29){
+		ofPushMatrix();
+			ofTranslate(450, 450);
+			ffont.drawString("Good job!", 0, 0); //high score text
+		ofPopMatrix();
+	}
+	if (fbonus > 30){
+		ofPushMatrix();
+			ofTranslate(450, 450);
+			ffont.drawString("Amazing! You did a great job!", 0, 0); //best score text
+		ofPopMatrix();
+	}
 }
 
 //--------------------------------------------------------------
 
 void ofApp::mousePressed(int x, int y, int button){
+	if (start == true){ //if the instructions are shown
+		if(ofGetMouseX() >= 400 && ofGetMouseX() <= 500){ //and if the mouse is on the start button
+			if(ofGetMouseY() >= 400 && ofGetMouseY() <= 440){
+				start = false; //start the game
+				sh1 = true; //show the first shape
+			}
+		}
+	}
 	if (end == false){
 		if (ofGetMouseX() >= 150 && ofGetMouseX() <= 850){ //check to see if mouse is within quiz choice areas
 			if (ofGetMouseY() >=450 && ofGetMouseY() <= 550){
